@@ -50,7 +50,7 @@ jobs:
 
       - name: Build
         if: ${{ hashFiles('package.json') != '' }}
-        run: bun build
+        run: bunx next build
 
       - name: Skip notice
         if: ${{ hashFiles('package.json') == '' }}
