@@ -79,17 +79,17 @@ export default function VehiclesPage() {
         </Card>
       </div>
 
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Vehicle</TableHead>
-              <TableHead>Plate</TableHead>
+              <TableHead className="hidden sm:table-cell">Plate</TableHead>
               <TableHead>Driver</TableHead>
-              <TableHead>Capacity</TableHead>
+              <TableHead className="hidden md:table-cell">Capacity</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Fuel Level</TableHead>
-              <TableHead>Device</TableHead>
+              <TableHead className="hidden sm:table-cell">Device</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -99,9 +99,9 @@ export default function VehiclesPage() {
               return (
                 <TableRow key={v.vehicleId}>
                   <TableCell className="font-medium">{v.label}</TableCell>
-                  <TableCell className="font-mono text-xs">{v.plateNumber}</TableCell>
+                  <TableCell className="hidden font-mono text-xs sm:table-cell">{v.plateNumber}</TableCell>
                   <TableCell>{v.assignedDriver}</TableCell>
-                  <TableCell>{v.tankCapacityLiters}L</TableCell>
+                  <TableCell className="hidden md:table-cell">{v.tankCapacityLiters}L</TableCell>
                   <TableCell>
                     <Badge variant={v.status === "active" ? "default" : "secondary"}>
                       {v.status}
@@ -109,7 +109,7 @@ export default function VehiclesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
+                      <div className="h-2 w-12 overflow-hidden rounded-full bg-muted sm:w-16">
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -126,7 +126,7 @@ export default function VehiclesPage() {
                       <span className="text-xs">{state?.fuelLevelPercent.toFixed(0)}%</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge
                       variant={device?.status === "online" ? "default" : "destructive"}
                       className="text-[10px]"

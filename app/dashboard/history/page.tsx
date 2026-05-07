@@ -181,17 +181,17 @@ export default function HistoryPage() {
 
       <div>
         <h2 className="font-heading mb-3 font-semibold">Trips</h2>
-        <div className="rounded-lg border">
+        <div className="overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Trip ID</TableHead>
+                <TableHead className="hidden md:table-cell">Trip ID</TableHead>
                 <TableHead>Vehicle</TableHead>
                 <TableHead>Start</TableHead>
-                <TableHead>End</TableHead>
+                <TableHead className="hidden sm:table-cell">End</TableHead>
                 <TableHead>Distance</TableHead>
                 <TableHead>Fuel Used</TableHead>
-                <TableHead>Avg Speed</TableHead>
+                <TableHead className="hidden sm:table-cell">Avg Speed</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -204,7 +204,7 @@ export default function HistoryPage() {
               )}
               {filteredTrips.map((t) => (
                 <TableRow key={t.tripId}>
-                  <TableCell className="font-mono text-xs">{t.tripId}</TableCell>
+                  <TableCell className="hidden font-mono text-xs md:table-cell">{t.tripId}</TableCell>
                   <TableCell>
                     {vehicles.find((v) => v.vehicleId === t.vehicleId)?.label ?? t.vehicleId}
                   </TableCell>
@@ -216,7 +216,7 @@ export default function HistoryPage() {
                       minute: "2-digit",
                     })}
                   </TableCell>
-                  <TableCell className="text-xs">
+                  <TableCell className="hidden text-xs sm:table-cell">
                     {new Date(t.endTime).toLocaleDateString([], {
                       month: "short",
                       day: "numeric",
@@ -226,7 +226,7 @@ export default function HistoryPage() {
                   </TableCell>
                   <TableCell>{t.distanceKm} km</TableCell>
                   <TableCell>{t.fuelUsedLiters} L</TableCell>
-                  <TableCell>{t.avgSpeedKph} km/h</TableCell>
+                  <TableCell className="hidden sm:table-cell">{t.avgSpeedKph} km/h</TableCell>
                 </TableRow>
               ))}
             </TableBody>

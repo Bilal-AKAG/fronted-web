@@ -16,7 +16,7 @@ const recentTrips = [...trips]
 
 export function TripsTable() {
   return (
-    <div className="rounded-lg border">
+    <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
