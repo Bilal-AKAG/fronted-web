@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import Providers from "@/providers/tanstack-query"
 
 const nunitoSansHeading = Nunito_Sans({
   subsets: ["latin"],
@@ -45,7 +46,9 @@ export default function RootLayout({
     >
       <body>
         <TooltipProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <Providers>{children}</Providers>
+          </ThemeProvider>
         </TooltipProvider>
       </body>
     </html>
