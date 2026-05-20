@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { IconArrowRight } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
@@ -93,10 +93,10 @@ export default function HeroSection() {
                     <div className="size-6 overflow-hidden rounded-full bg-background duration-500 group-hover:bg-muted">
                       <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
                         <span className="flex size-6">
-                          <ArrowRight className="m-auto size-3" />
+                          <IconArrowRight className="m-auto size-3" />
                         </span>
                         <span className="flex size-6">
-                          <ArrowRight className="m-auto size-3" />
+                          <IconArrowRight className="m-auto size-3" />
                         </span>
                       </div>
                     </div>
