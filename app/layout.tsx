@@ -2,11 +2,18 @@ import { Geist, Geist_Mono, Merriweather, Nunito_Sans } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
-const nunitoSansHeading = Nunito_Sans({subsets:['latin'],variable:'--font-heading'});
+const nunitoSansHeading = Nunito_Sans({
+  subsets: ["latin"],
+  variable: "--font-heading",
+})
 
-const merriweather = Merriweather({subsets:['latin'],variable:'--font-serif'});
+const merriweather = Merriweather({
+  subsets: ["latin"],
+  variable: "--font-serif",
+})
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -27,10 +34,19 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontSans.variable, fontMono.variable, "font-serif", merriweather.variable, nunitoSansHeading.variable)}
+      className={cn(
+        "antialiased",
+        fontSans.variable,
+        fontMono.variable,
+        "font-serif",
+        merriweather.variable,
+        nunitoSansHeading.variable
+      )}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <TooltipProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </TooltipProvider>
       </body>
     </html>
   )
