@@ -9,6 +9,9 @@ import {
   IconHistory,
   IconChartBar,
   IconGasStation,
+  IconDeviceDesktop,
+  IconUsers,
+  IconRoute,
 } from "@tabler/icons-react"
 import {
   Sidebar,
@@ -26,6 +29,9 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: IconDashboard },
   { href: "/dashboard/vehicles", label: "Vehicles", icon: IconTruck },
+  { href: "/dashboard/devices", label: "Devices", icon: IconDeviceDesktop },
+  { href: "/dashboard/drivers", label: "Drivers", icon: IconUsers },
+  { href: "/dashboard/trips", label: "Trips", icon: IconRoute },
   { href: "/dashboard/alerts", label: "Alerts", icon: IconBell },
   { href: "/dashboard/history", label: "History", icon: IconHistory },
   { href: "/dashboard/analytics", label: "Analytics", icon: IconChartBar },

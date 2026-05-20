@@ -1,6 +1,7 @@
 "use client"
 
 import { trips, vehicles } from "@/lib/mock-data"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -21,25 +22,29 @@ export function TripsTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Vehicle</TableHead>
+            <TableHead>Driver</TableHead>
             <TableHead>Distance</TableHead>
             <TableHead>Fuel Used</TableHead>
             <TableHead>Avg Speed</TableHead>
-            <TableHead className="hidden sm:table-cell">Duration</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="hidden md:table-cell">Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {recentTrips.map((t) => {
             const vehicle = vehicles.find((v) => v.vehicleId === t.vehicleId)
-            const durationMs = new Date(t.endTime).getTime() - new Date(t.startTime).getTime()
-            const durationMin = Math.round(durationMs / 60000)
             return (
               <TableRow key={t.tripId}>
                 <TableCell className="font-medium">{vehicle?.label ?? t.vehicleId}</TableCell>
-                <TableCell>{t.distanceKm} km</TableCell>
-                <TableCell>{t.fuelUsedLiters} L</TableCell>
-                <TableCell>{t.avgSpeedKph} km/h</TableCell>
-                <TableCell className="hidden sm:table-cell">{durationMin} min</TableCell>
+                <TableCell>{t.driver?.fullName ?? "-"}</TableCell>
+                <TableCell>{t.distanceKm ? `${t.distanceKm.toFixed(1)} km` : "-"}</TableCell>
+                <TableCell>{t.fuelUsedLiters ? `${t.fuelUsedLiters.toFixed(1)} L` : "-"}</TableCell>
+                <TableCell>{t.avgSpeedKmh ? `${t.avgSpeedKmh.toFixed(1)} km/h` : "-"}</TableCell>
+                <TableCell>
+                  <Badge variant={t.status === "active" ? "default" : "outline"} className="text-[10px]">
+                    {t.status}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
                   {new Date(t.startTime).toLocaleDateString([], { month: "short", day: "numeric" })}
                 </TableCell>

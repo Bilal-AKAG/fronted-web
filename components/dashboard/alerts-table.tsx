@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/table"
 
 const severityVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  low: "default",
-  medium: "secondary",
-  high: "destructive",
+  info: "default",
+  warning: "secondary",
   critical: "destructive",
 }
 
@@ -54,7 +53,7 @@ export function AlertsTable() {
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge variant={severityVariant[a.severity]} className="text-[10px]">
+                <Badge variant={severityVariant[a.severity] ?? "outline"} className="text-[10px]">
                   {a.severity}
                 </Badge>
               </TableCell>

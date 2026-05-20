@@ -1,6 +1,6 @@
 "use client"
 
-import { predictions, telemetryHistory, vehicles, trips } from "@/lib/mock-data"
+import { telemetryHistory, vehicles, trips, alerts } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -22,21 +22,21 @@ import {
 import {
   IconTrendingUp,
   IconAlertTriangle,
-  IconChartLine,
   IconCalculator,
+  IconRoute,
 } from "@tabler/icons-react"
 
 const vehicleIds = vehicles.map((v) => v.vehicleId)
 const colors = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)"]
 
-const consumptionByHour: Record<string, { hour: string; [key: string]: number | string }[]> = {}
+const consumptionByHour: Record<string, { hour: string; fuel: number }[]> = {}
 for (const vId of vehicleIds) {
   const data = telemetryHistory
     .filter((t) => t.vehicleId === vId)
     .filter((_, i) => i % 12 === 0)
     .map((t) => ({
-      hour: new Date(t.timestamp).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit" }),
-      fuel: t.fuelLevelLiters,
+      hour: new Date(t.receivedAt).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit" }),
+      fuel: t.fuelLiters,
     }))
   consumptionByHour[vId] = data
 }
@@ -46,37 +46,59 @@ for (const vId of vehicleIds) {
   consumptionConfig[vId] = { label: vehicles.find((v) => v.vehicleId === vId)!.label, color: colors[vehicleIds.indexOf(vId)] }
 }
 
-const mergedConsumption = consumptionByHour[vehicleIds[0]]?.map((d, i) => {
-  const row: Record<string, string | number> = { hour: d.hour }
+const maxConsumptionLen = Math.max(...Object.values(consumptionByHour).map((d) => d.length))
+const mergedConsumption = Array.from({ length: Math.min(maxConsumptionLen, 48) }, (_, i) => {
+  const row: Record<string, string | number> = { hour: consumptionByHour[vehicleIds[0]][i]?.hour ?? "" }
   for (const vId of vehicleIds) {
     row[vId] = consumptionByHour[vId]?.[i]?.fuel ?? 0
   }
   return row
-}) ?? []
+})
 
-const distanceByVehicle = vehicleIds.map((vId) => ({
-  vehicle: vehicles.find((v) => v.vehicleId === vId)!.label,
-  distance: trips.filter((t) => t.vehicleId === vId).reduce((s, t) => s + t.distanceKm, 0),
-  fuel: trips.filter((t) => t.vehicleId === vId).reduce((s, t) => s + t.fuelUsedLiters, 0),
-}))
+const distanceByVehicle = vehicleIds.map((vId) => {
+  const vehicleTrips = trips.filter((t) => t.vehicleId === vId)
+  return {
+    vehicle: vehicles.find((v) => v.vehicleId === vId)!.label,
+    distance: vehicleTrips.reduce((s, t) => s + (t.distanceKm ?? 0), 0),
+    fuel: vehicleTrips.reduce((s, t) => s + (t.fuelUsedLiters ?? 0), 0),
+  }
+})
 
 const distanceConfig: Record<string, { label: string; color: string }> = {
   distance: { label: "Distance", color: "var(--color-chart-1)" },
   fuel: { label: "Fuel Used", color: "var(--color-chart-2)" },
 }
 
+const totalFuelUsedTrips = trips.filter((t) => t.fuelUsedLiters !== null)
+const totalDistanceTrips = trips.filter((t) => t.distanceKm !== null)
 const avgFuelConsumption =
-  trips.length > 0
-    ? (trips.reduce((s, t) => s + t.fuelUsedLiters, 0) / trips.reduce((s, t) => s + t.distanceKm, 0) * 100).toFixed(1)
+  totalDistanceTrips.length > 0
+    ? (
+        totalFuelUsedTrips.reduce((s, t) => s + (t.fuelUsedLiters ?? 0), 0) /
+        totalDistanceTrips.reduce((s, t) => s + (t.distanceKm ?? 0), 0) *
+        100
+      ).toFixed(1)
     : "0"
 
-const totalDistance = trips.reduce((s, t) => s + t.distanceKm, 0).toFixed(0)
-const totalFuelUsed = trips.reduce((s, t) => s + t.fuelUsedLiters, 0).toFixed(1)
-const highConfidencePredictions = predictions.filter((p) => p.confidence > 0.75)
+const totalDistance = totalDistanceTrips.reduce((s, t) => s + (t.distanceKm ?? 0), 0).toFixed(0)
+const totalFuelUsed = totalFuelUsedTrips.reduce((s, t) => s + (t.fuelUsedLiters ?? 0), 0).toFixed(1)
 
-const forecastConfig: Record<string, { label: string; color: string }> = {
-  forecast: { label: "Forecast (L)", color: "var(--color-chart-1)" },
-  confidence: { label: "Confidence", color: "var(--color-chart-3)" },
+const openAlerts = alerts.filter((a) => a.status === "open")
+const criticalAlerts = openAlerts.filter((a) => a.severity === "critical")
+
+const vehicleEfficiency = vehicleIds.map((vId) => {
+  const vehicleTrips = trips.filter((t) => t.vehicleId === vId && t.fuelUsedLiters !== null && t.distanceKm !== null)
+  const totalFuel = vehicleTrips.reduce((s, t) => s + (t.fuelUsedLiters ?? 0), 0)
+  const totalDist = vehicleTrips.reduce((s, t) => s + (t.distanceKm ?? 0), 0)
+  const efficiency = totalDist > 0 ? (totalFuel / totalDist) * 100 : 0
+  return {
+    vehicle: vehicles.find((v) => v.vehicleId === vId)!.label,
+    efficiency: parseFloat(efficiency.toFixed(1)),
+  }
+})
+
+const efficiencyConfig: Record<string, { label: string; color: string }> = {
+  efficiency: { label: "L/100km", color: "var(--color-chart-4)" },
 }
 
 export default function AnalyticsPage() {
@@ -85,7 +107,7 @@ export default function AnalyticsPage() {
       <div>
         <h1 className="font-heading text-xl font-bold">Analytics</h1>
         <p className="text-sm text-muted-foreground">
-          Fuel consumption insights, forecasts, and anomaly detection
+          Fuel consumption insights and fleet performance metrics
         </p>
       </div>
 
@@ -93,7 +115,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <IconChartLine className="size-4" />
+              <IconRoute className="size-4" />
               Total Distance
             </CardTitle>
           </CardHeader>
@@ -127,11 +149,16 @@ export default function AnalyticsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm">
               <IconAlertTriangle className="size-4" />
-              High Conf. Predictions
+              Open Alerts
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-heading text-2xl font-bold">{highConfidencePredictions.length}</p>
+            <p className="font-heading text-2xl font-bold">
+              {openAlerts.length}
+              {criticalAlerts.length > 0 && (
+                <span className="text-destructive"> ({criticalAlerts.length} critical)</span>
+              )}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -188,22 +215,17 @@ export default function AnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Fuel Forecast & Confidence</CardTitle>
+            <CardTitle className="text-sm">Fuel Efficiency by Vehicle (L/100km)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={forecastConfig} className="aspect-[2/1] max-h-60 w-full">
-              <BarChart data={predictions.filter((p) => p.type === "FUEL_FORECAST").map((p) => ({
-                label: vehicles.find((v) => v.vehicleId === p.vehicleId)?.label ?? p.vehicleId,
-                forecast: p.value,
-                confidence: Math.round(p.confidence * 100),
-              }))}>
+            <ChartContainer config={efficiencyConfig} className="aspect-[2/1] max-h-60 w-full">
+              <BarChart data={vehicleEfficiency}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <XAxis dataKey="vehicle" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Legend />
-                <Bar dataKey="forecast" fill="var(--color-chart-1)" radius={4} name="Forecast (L)" />
-                <Bar dataKey="confidence" fill="var(--color-chart-3)" radius={4} name="Confidence (%)" />
+                <Bar dataKey="efficiency" fill="var(--color-chart-4)" radius={4} name="L/100km" />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -211,80 +233,53 @@ export default function AnalyticsPage() {
       </div>
 
       <div>
-        <h2 className="font-heading mb-3 font-semibold">Anomaly Detection</h2>
+        <h2 className="font-heading mb-3 font-semibold">Open Alerts by Vehicle</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {predictions
-            .filter((p) => p.type === "ANOMALY_SCORE")
-            .map((p) => {
-              const vehicle = vehicles.find((v) => v.vehicleId === p.vehicleId)
-              const isAnomalous = p.value > 70
-              return (
-                <Card key={p.predictionId}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xs text-muted-foreground">
-                        {vehicle?.label}
-                      </CardTitle>
-                      <Badge variant={isAnomalous ? "destructive" : "default"} className="text-[10px]">
-                        {isAnomalous ? "Anomalous" : "Normal"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="font-heading text-2xl font-bold">{p.value.toFixed(0)}%</p>
-                    <p className="text-xs text-muted-foreground">
-                      Anomaly score &middot; {(p.confidence * 100).toFixed(0)}% confidence
-                    </p>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${p.value}%`,
-                          backgroundColor: isAnomalous ? "var(--destructive)" : "var(--color-chart-2)",
-                        }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+          {vehicles.map((v) => {
+            const vehicleAlerts = openAlerts.filter((a) => a.vehicleId === v.vehicleId)
+            const critical = vehicleAlerts.filter((a) => a.severity === "critical").length
+            const warning = vehicleAlerts.filter((a) => a.severity === "warning").length
+            const info = vehicleAlerts.filter((a) => a.severity === "info").length
+            return (
+              <Card key={v.vehicleId}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs text-muted-foreground">{v.label}</CardTitle>
+                    <Badge
+                      variant={critical > 0 ? "destructive" : warning > 0 ? "secondary" : "outline"}
+                      className="text-[10px]"
+                    >
+                      {vehicleAlerts.length} alerts
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4 text-xs">
+                    {critical > 0 && (
+                      <span className="text-destructive">
+                        <strong>{critical}</strong> critical
+                      </span>
+                    )}
+                    {warning > 0 && (
+                      <span className="text-warning">
+                        <strong>{warning}</strong> warning
+                      </span>
+                    )}
+                    {info > 0 && (
+                      <span className="text-muted-foreground">
+                        <strong>{info}</strong> info
+                      </span>
+                    )}
+                    {vehicleAlerts.length === 0 && (
+                      <span className="text-muted-foreground">No open alerts</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Fuel Forecast Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {predictions
-              .filter((p) => p.type === "FUEL_FORECAST")
-              .map((p) => {
-                const vehicle = vehicles.find((v) => v.vehicleId === p.vehicleId)
-                return (
-                  <div key={p.predictionId} className="rounded-lg border p-4">
-                    <p className="text-sm text-muted-foreground">{vehicle?.label}</p>
-                    <p className="font-heading text-3xl font-bold">{p.value.toFixed(1)}L</p>
-                    <p className="text-xs text-muted-foreground">
-                      Estimated remaining fuel &middot; {(p.confidence * 100).toFixed(0)}% confidence
-                    </p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                      <IconTrendingUp className="size-3" />
-                      <span>
-                        Generated{" "}
-                        {new Date(p.generatedAt).toLocaleDateString([], {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

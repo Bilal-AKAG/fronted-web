@@ -6,9 +6,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Pie, PieChart, Cell } from "recharts"
 
 const severityColors: Record<string, string> = {
-  low: "var(--color-chart-1)",
-  medium: "var(--color-chart-2)",
-  high: "var(--color-chart-4)",
+  info: "var(--color-chart-1)",
+  warning: "var(--color-chart-2)",
   critical: "var(--destructive)",
 }
 
@@ -25,7 +24,7 @@ for (const a of alerts) {
 const chartData = Object.entries(severityCounts).map(([severity, count]) => ({
   severity,
   count,
-  fill: severityColors[severity],
+  fill: severityColors[severity] ?? "var(--color-muted)",
 }))
 
 export function AlertDistribution() {

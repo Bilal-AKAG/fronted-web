@@ -6,13 +6,19 @@ import {
   IconBell,
   IconGasStation,
   IconDeviceDesktop,
+  IconAlertTriangle,
 } from "@tabler/icons-react"
+
+const devicesTotal = summary.devicesOnline + summary.devicesStale + summary.devicesOffline
 
 const cards = [
   { label: "Total Vehicles", value: summary.totalVehicles, icon: IconTruck },
+  { label: "Active Vehicles", value: summary.activeVehicles, icon: IconTruck },
   { label: "Active Alerts", value: summary.activeAlerts, icon: IconBell },
+  { label: "Critical Alerts", value: summary.criticalAlerts, icon: IconAlertTriangle },
   { label: "Fleet Fuel Avg", value: `${summary.fleetFuelAvgPercent}%`, icon: IconGasStation },
-  { label: "Devices Online", value: `${summary.devicesOnline}/${summary.devicesOnline + 0}`, icon: IconDeviceDesktop },
+  { label: "Devices Online", value: `${summary.devicesOnline}/${devicesTotal}`, icon: IconDeviceDesktop },
+  { label: "Active Trips", value: summary.activeTrips, icon: IconTruck },
 ]
 
 export function SummaryCards() {

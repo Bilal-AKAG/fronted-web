@@ -24,9 +24,8 @@ import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts"
 import { IconSearch, IconAlertCircle, IconCheck, IconX } from "@tabler/icons-react"
 
 const severityVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  low: "default",
-  medium: "secondary",
-  high: "destructive",
+  info: "default",
+  warning: "secondary",
   critical: "destructive",
 }
 
@@ -50,8 +49,12 @@ const typeChartData = Object.entries(alertTypeCounts).map(([type, count]) => ({
 const typeConfig: Record<string, { label: string; color: string }> = {
   "SUSPECTED FUEL DROP": { label: "Fuel Drop", color: "var(--color-chart-4)" },
   "LOW FUEL": { label: "Low Fuel", color: "var(--color-chart-2)" },
-  "DEVICE OFFLINE": { label: "Offline", color: "var(--color-chart-5)" },
-  "FUEL REFILL": { label: "Refill", color: "var(--color-chart-1)" },
+  "OVERSPEED": { label: "Overspeed", color: "var(--color-chart-5)" },
+  "DEVICE OFFLINE": { label: "Offline", color: "var(--color-chart-3)" },
+  "DEVICE STALE": { label: "Stale", color: "var(--color-chart-1)" },
+  "DOOR OPEN PARKED": { label: "Door Open", color: "var(--color-chart-6)" },
+  "REFILL DETECTED": { label: "Refill", color: "var(--color-chart-1)" },
+  "GEOFENCE VIOLATION": { label: "Geofence", color: "var(--color-chart-2)" },
 }
 
 export default function AlertsPage() {

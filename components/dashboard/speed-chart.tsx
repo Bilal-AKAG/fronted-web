@@ -18,13 +18,14 @@ for (const vId of vehicleIds) {
     .filter((t) => t.vehicleId === vId)
     .slice(-96)
     .map((t) => ({
-      time: new Date(t.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      speed: t.speedKph,
+      time: new Date(t.receivedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      speed: t.speedKmh,
     }))
 }
 
-const mergedData = dataMap[vehicleIds[0]].map((d, i) => {
-  const row: Record<string, string | number> = { time: d.time }
+const maxLen = Math.max(...Object.values(dataMap).map((d) => d.length))
+const mergedData = Array.from({ length: maxLen }, (_, i) => {
+  const row: Record<string, string | number> = { time: dataMap[vehicleIds[0]][i]?.time ?? "" }
   for (const vId of vehicleIds) {
     row[vId] = dataMap[vId][i]?.speed ?? 0
   }

@@ -1,6 +1,6 @@
 "use client"
 
-import { vehicles, devices, latestStates } from "@/lib/mock-data"
+import { vehicles, devices, drivers, getLatestState } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -47,7 +47,7 @@ export default function VehiclesPage() {
           </CardHeader>
           <CardContent>
             <p className="font-heading text-2xl font-bold">
-              {vehicles.filter((v) => v.assignedDriver).length}
+              {vehicles.filter((v) => v.assignedDriverId).length}
             </p>
           </CardContent>
         </Card>
@@ -85,6 +85,7 @@ export default function VehiclesPage() {
             <TableRow>
               <TableHead>Vehicle</TableHead>
               <TableHead className="hidden sm:table-cell">Plate</TableHead>
+              <TableHead>Make/Model</TableHead>
               <TableHead>Driver</TableHead>
               <TableHead className="hidden md:table-cell">Capacity</TableHead>
               <TableHead>Status</TableHead>
@@ -94,13 +95,17 @@ export default function VehiclesPage() {
           </TableHeader>
           <TableBody>
             {vehicles.map((v) => {
-              const state = latestStates.find((s) => s.vehicleId === v.vehicleId)
-              const device = devices.find((d) => d.vehicleId === v.vehicleId)
+              const state = getLatestState(v.vehicleId)
+              const device = devices.find((d) => d.deviceId === v.assignedDeviceId)
+              const driver = drivers.find((d) => d.driverId === v.assignedDriverId)
               return (
                 <TableRow key={v.vehicleId}>
                   <TableCell className="font-medium">{v.label}</TableCell>
                   <TableCell className="hidden font-mono text-xs sm:table-cell">{v.plateNumber}</TableCell>
-                  <TableCell>{v.assignedDriver}</TableCell>
+                  <TableCell className="text-xs">
+                    {v.make} {v.model}
+                  </TableCell>
+                  <TableCell>{driver?.fullName ?? "Unassigned"}</TableCell>
                   <TableCell className="hidden md:table-cell">{v.tankCapacityLiters}L</TableCell>
                   <TableCell>
                     <Badge variant={v.status === "active" ? "default" : "secondary"}>
@@ -113,22 +118,22 @@ export default function VehiclesPage() {
                         <div
                           className="h-full rounded-full"
                           style={{
-                            width: `${state?.fuelLevelPercent ?? 0}%`,
+                            width: `${state.fuelPercent}%`,
                             backgroundColor:
-                              (state?.fuelLevelPercent ?? 0) > 50
+                              state.fuelPercent > 50
                                 ? "var(--color-chart-1)"
-                                : (state?.fuelLevelPercent ?? 0) > 25
+                                : state.fuelPercent > 25
                                   ? "var(--color-chart-3)"
                                   : "var(--destructive)",
                           }}
                         />
                       </div>
-                      <span className="text-xs">{state?.fuelLevelPercent.toFixed(0)}%</span>
+                      <span className="text-xs">{state.fuelPercent.toFixed(0)}%</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge
-                      variant={device?.status === "online" ? "default" : "destructive"}
+                      variant={device?.status === "online" ? "default" : device?.status === "stale" ? "secondary" : "destructive"}
                       className="text-[10px]"
                     >
                       {device?.status ?? "N/A"}
@@ -145,8 +150,9 @@ export default function VehiclesPage() {
         <h2 className="font-heading mb-3 font-semibold">Vehicle Details</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {vehicles.map((v) => {
-            const state = latestStates.find((s) => s.vehicleId === v.vehicleId)
-            const device = devices.find((d) => d.vehicleId === v.vehicleId)
+            const state = getLatestState(v.vehicleId)
+            const device = devices.find((d) => d.deviceId === v.assignedDeviceId)
+            const driver = drivers.find((d) => d.driverId === v.assignedDriverId)
             return (
               <div key={v.vehicleId} className="rounded-lg border p-4">
                 <div className="flex items-center justify-between">
@@ -161,16 +167,30 @@ export default function VehiclesPage() {
                     <span className="font-mono text-xs">{v.plateNumber}</span>
                   </div>
                   <div>
+                    <span className="text-muted-foreground">Make/Model: </span>
+                    <span className="text-xs">
+                      {v.make} {v.model}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Year: </span>
+                    <span>{v.year ?? "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Color: </span>
+                    <span>{v.color ?? "N/A"}</span>
+                  </div>
+                  <div>
                     <span className="text-muted-foreground">Driver: </span>
-                    <span>{v.assignedDriver}</span>
+                    <span>{driver?.fullName ?? "Unassigned"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Device: </span>
-                    <span className="font-mono text-xs">{device?.deviceId}</span>
+                    <span className="font-mono text-xs">{device?.deviceId ?? "None"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Firmware: </span>
-                    <span>{device?.firmwareVersion}</span>
+                    <span>{device?.firmwareVersion ?? "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Tank: </span>
@@ -179,19 +199,23 @@ export default function VehiclesPage() {
                   <div>
                     <span className="text-muted-foreground">Fuel: </span>
                     <span>
-                      {state?.fuelLevelLiters.toFixed(1)}L ({state?.fuelLevelPercent.toFixed(0)}%)
+                      {state.fuelLiters.toFixed(1)}L ({state.fuelPercent.toFixed(0)}%)
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Engine: </span>
-                    <Badge variant={state?.engineStatus === "ON" ? "default" : "outline"} className="text-[10px]">
-                      {state?.engineStatus}
+                    <Badge variant={state.engineOn ? "default" : "outline"} className="text-[10px]">
+                      {state.engineOn ? "ON" : "OFF"}
                     </Badge>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Speed: </span>
+                    <span>{state.speedKmh.toFixed(1)} km/h</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Last Seen: </span>
                     <span className="text-xs">
-                      {state?.lastSeenAt
+                      {state.lastSeenAt
                         ? new Date(state.lastSeenAt).toLocaleDateString([], {
                             month: "short",
                             day: "numeric",
@@ -202,11 +226,9 @@ export default function VehiclesPage() {
                     </span>
                   </div>
                 </div>
-                {state && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    GPS: {state.location.latitude.toFixed(4)}, {state.location.longitude.toFixed(4)}
-                  </div>
-                )}
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {state.locationName ?? "Unknown"} ({state.latitude.toFixed(4)}, {state.longitude.toFixed(4)})
+                </div>
               </div>
             )
           })}

@@ -31,28 +31,31 @@ for (const vId of vehicleIds) {
   fuelDataMap[vId] = telemetryHistory
     .filter((t) => t.vehicleId === vId)
     .map((t) => ({
-      time: new Date(t.timestamp).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit" }),
-      fuel: t.fuelLevelLiters,
+      time: new Date(t.receivedAt).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit" }),
+      fuel: t.fuelLiters,
     }))
 }
 
-const fuelChartData = fuelDataMap[vehicleIds[0]]?.map((d, i) => {
-  const row: Record<string, string | number> = { time: d.time }
+const maxFuelLen = Math.max(...Object.values(fuelDataMap).map((d) => d.length))
+const fuelChartData = Array.from({ length: Math.min(maxFuelLen, 48) }, (_, i) => {
+  const row: Record<string, string | number> = { time: fuelDataMap[vehicleIds[0]][i]?.time ?? "" }
   for (const vId of vehicleIds) {
     row[vId] = fuelDataMap[vId]?.[i]?.fuel ?? 0
   }
   return row
-}).filter((_, i) => i % 6 === 0) ?? []
+})
 
 const tripConfig: Record<string, { label: string; color: string }> = {}
 for (const v of vehicles) {
   tripConfig[v.vehicleId] = { label: v.label, color: colors[vehicleIds.indexOf(v.vehicleId)] }
 }
 
-const tripDistanceData = trips.map((t) => ({
-  trip: t.tripId.replace("trip_", "T"),
-  [t.vehicleId]: t.distanceKm,
-}))
+const tripDistanceData = trips
+  .filter((t) => t.distanceKm !== null)
+  .map((t) => ({
+    trip: t.tripId.replace("TRP-", "T"),
+    [t.vehicleId]: t.distanceKm,
+  }))
 
 export default function HistoryPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null)
@@ -61,11 +64,11 @@ export default function HistoryPage() {
     ? trips.filter((t) => t.vehicleId === selectedVehicle)
     : trips
 
-  const totalDistance = filteredTrips.reduce((s, t) => s + t.distanceKm, 0)
-  const totalFuel = filteredTrips.reduce((s, t) => s + t.fuelUsedLiters, 0)
+  const totalDistance = filteredTrips.reduce((s, t) => s + (t.distanceKm ?? 0), 0)
+  const totalFuel = filteredTrips.reduce((s, t) => s + (t.fuelUsedLiters ?? 0), 0)
   const avgSpeed =
     filteredTrips.length > 0
-      ? filteredTrips.reduce((s, t) => s + t.avgSpeedKph, 0) / filteredTrips.length
+      ? filteredTrips.reduce((s, t) => s + (t.avgSpeedKmh ?? 0), 0) / filteredTrips.filter((t) => t.avgSpeedKmh !== null).length
       : 0
 
   return (
@@ -187,6 +190,7 @@ export default function HistoryPage() {
               <TableRow>
                 <TableHead className="hidden md:table-cell">Trip ID</TableHead>
                 <TableHead>Vehicle</TableHead>
+                <TableHead>Driver</TableHead>
                 <TableHead>Start</TableHead>
                 <TableHead className="hidden sm:table-cell">End</TableHead>
                 <TableHead>Distance</TableHead>
@@ -197,7 +201,7 @@ export default function HistoryPage() {
             <TableBody>
               {filteredTrips.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                     No trips found
                   </TableCell>
                 </TableRow>
@@ -208,6 +212,7 @@ export default function HistoryPage() {
                   <TableCell>
                     {vehicles.find((v) => v.vehicleId === t.vehicleId)?.label ?? t.vehicleId}
                   </TableCell>
+                  <TableCell>{t.driver?.fullName ?? "-"}</TableCell>
                   <TableCell className="text-xs">
                     {new Date(t.startTime).toLocaleDateString([], {
                       month: "short",
@@ -217,16 +222,20 @@ export default function HistoryPage() {
                     })}
                   </TableCell>
                   <TableCell className="hidden text-xs sm:table-cell">
-                    {new Date(t.endTime).toLocaleDateString([], {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {t.endTime
+                      ? new Date(t.endTime).toLocaleDateString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
                   </TableCell>
-                  <TableCell>{t.distanceKm} km</TableCell>
-                  <TableCell>{t.fuelUsedLiters} L</TableCell>
-                  <TableCell className="hidden sm:table-cell">{t.avgSpeedKph} km/h</TableCell>
+                  <TableCell>{t.distanceKm ? `${t.distanceKm.toFixed(1)} km` : "-"}</TableCell>
+                  <TableCell>{t.fuelUsedLiters ? `${t.fuelUsedLiters.toFixed(1)} L` : "-"}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {t.avgSpeedKmh ? `${t.avgSpeedKmh.toFixed(1)} km/h` : "-"}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -16,11 +16,13 @@ for (const v of vehicles) {
   config[v.vehicleId] = { label: v.label, color: colorMap[v.vehicleId] }
 }
 
-const chartData = trips.map((t) => ({
-  trip: t.tripId.replace("trip_", "T"),
-  [t.vehicleId]: t.fuelUsedLiters,
-  vehicleId: t.vehicleId,
-}))
+const chartData = trips
+  .filter((t) => t.fuelUsedLiters !== null)
+  .map((t) => ({
+    trip: t.tripId.replace("TRP-", "T"),
+    [t.vehicleId]: t.fuelUsedLiters,
+    vehicleId: t.vehicleId,
+  }))
 
 export function ConsumptionChart() {
   return (

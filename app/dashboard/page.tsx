@@ -8,7 +8,6 @@ import { ConsumptionChart } from "@/components/dashboard/consumption-chart"
 import { AlertDistribution } from "@/components/dashboard/alert-distribution"
 import { AlertsTable } from "@/components/dashboard/alerts-table"
 import { TripsTable } from "@/components/dashboard/trips-table"
-import { Predictions } from "@/components/dashboard/predictions"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function DashboardPage() {
@@ -36,16 +35,12 @@ export default function DashboardPage() {
         <TabsList>
           <TabsTrigger value="alerts">Recent Alerts</TabsTrigger>
           <TabsTrigger value="trips">Recent Trips</TabsTrigger>
-          <TabsTrigger value="predictions">Predictions</TabsTrigger>
         </TabsList>
         <TabsContent value="alerts" className="pt-2">
           <AlertsTable />
         </TabsContent>
         <TabsContent value="trips" className="pt-2">
           <TripsTable />
-        </TabsContent>
-        <TabsContent value="predictions" className="pt-2">
-          <Predictions />
         </TabsContent>
       </Tabs>
     </div>

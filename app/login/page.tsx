@@ -1,5 +1,5 @@
 "use client"
-import Link from "next/link"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { IconGasStation } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -8,39 +8,57 @@ import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
   const router = useRouter()
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+
+  const handleLogin = () => {
+    if (!username || !password) {
+      setError("Username and password are required")
+      return
+    }
+    if (username === "admin" && password === "admin123") {
+      router.push("/dashboard")
+    } else {
+      setError("Invalid username or password")
+    }
+  }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center px-6">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <IconGasStation className="size-8 text-primary" />
-          <h1 className="font-heading text-2xl font-bold">Welcome back</h1>
+          <h1 className="font-heading text-2xl font-bold">FuelGuard Admin</h1>
           <p className="text-sm text-muted-foreground">Sign in to your account</p>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" />
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
           </div>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <span className="text-xs text-muted-foreground">Forgot password?</span>
-            </div>
-            <Input id="password" type="password" placeholder="Enter your password" />
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
-          <Button className="w-full" onClick={() => router.push("/dashboard")}>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button className="w-full" onClick={handleLogin}>
             Sign In
           </Button>
         </div>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-primary underline-offset-4 hover:underline">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   )
