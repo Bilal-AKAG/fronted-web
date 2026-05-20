@@ -69,10 +69,8 @@ export default function HeroSection() {
                   },
                 },
               }}
-              className="absolute inset-0 top-56 mask-y-from-35% mask-y-to-90% lg:top-12"
-            >
-            
-            </AnimatedGroup>
+              className="pointer-events-none absolute inset-0 top-56 mask-y-from-35% mask-y-to-90% lg:top-12"
+            ></AnimatedGroup>
 
             <div
               aria-hidden
@@ -121,8 +119,9 @@ export default function HeroSection() {
                   as="p"
                   className="mx-auto mt-8 max-w-2xl text-lg text-balance"
                 >
-                  Real-time fuel monitoring with ESP32 hardware, GPS tracking, smart theft detection, 
-                  and comprehensive fleet management — all in one powerful dashboard.
+                  Real-time fuel monitoring with ESP32 hardware, GPS tracking,
+                  smart theft detection, and comprehensive fleet management —
+                  all in one powerful dashboard.
                 </TextEffect>
 
                 <AnimatedGroup
@@ -143,16 +142,14 @@ export default function HeroSection() {
                     key={1}
                     className="rounded-[calc(var(--radius-xl)+0.125rem)] border bg-foreground/10 p-0.5"
                   >
-                    <Link href="/login">
-                      <Button
-                        size="lg"
-                        className="rounded-xl px-5 text-base"
-                      >
-                        Get Started
-                      </Button>
-                    </Link>
+                    <Button
+                      size="lg"
+                      asChild
+                      className="rounded-xl px-5 text-base"
+                    >
+                      <Link href="/login">Get Started</Link>
+                    </Button>
                   </div>
-                
                 </AnimatedGroup>
               </div>
             </div>
