@@ -36,8 +36,11 @@ export interface VehicleItem {
   vehicleId: string
   label: string
   plateNumber: string
+  tankCapacityLiters?: number | null
   make: string | null
   model: string | null
+  year?: number | null
+  color?: string | null
   status: string
   assignedDriver: VehicleDriver | null
   assignedDevice: VehicleDevice | null
