@@ -98,7 +98,9 @@ export default function VehiclesPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const vehicleId = crypto.randomUUID()
     await createMutation.mutateAsync({
+      vehicleId,
       plateNumber: form.plateNumber,
       label: form.label,
       tankCapacityLiters: Number(form.tankCapacityLiters),
@@ -152,6 +154,7 @@ export default function VehiclesPage() {
                   <Label htmlFor="v-label">Label</Label>
                   <Input
                     id="v-label"
+                    placeholder="e.g. Truck #12"
                     value={form.label}
                     onChange={(e) =>
                       setForm({ ...form, label: e.target.value })
@@ -163,6 +166,7 @@ export default function VehiclesPage() {
                   <Label htmlFor="v-plate">Plate Number</Label>
                   <Input
                     id="v-plate"
+                    placeholder="e.g. ABC 1234"
                     value={form.plateNumber}
                     onChange={(e) =>
                       setForm({ ...form, plateNumber: e.target.value })
@@ -175,6 +179,7 @@ export default function VehiclesPage() {
                   <Input
                     id="v-tank"
                     type="number"
+                    placeholder="e.g. 100"
                     value={form.tankCapacityLiters}
                     onChange={(e) =>
                       setForm({ ...form, tankCapacityLiters: e.target.value })
@@ -186,6 +191,7 @@ export default function VehiclesPage() {
                   <Label htmlFor="v-make">Make</Label>
                   <Input
                     id="v-make"
+                    placeholder="e.g. Toyota"
                     value={form.make}
                     onChange={(e) => setForm({ ...form, make: e.target.value })}
                   />
@@ -194,6 +200,7 @@ export default function VehiclesPage() {
                   <Label htmlFor="v-model">Model</Label>
                   <Input
                     id="v-model"
+                    placeholder="e.g. Hilux"
                     value={form.model}
                     onChange={(e) =>
                       setForm({ ...form, model: e.target.value })
@@ -205,6 +212,7 @@ export default function VehiclesPage() {
                   <Input
                     id="v-year"
                     type="number"
+                    placeholder="e.g. 2024"
                     value={form.year}
                     onChange={(e) => setForm({ ...form, year: e.target.value })}
                   />
@@ -213,6 +221,7 @@ export default function VehiclesPage() {
                   <Label htmlFor="v-color">Color</Label>
                   <Input
                     id="v-color"
+                    placeholder="e.g. White"
                     value={form.color}
                     onChange={(e) =>
                       setForm({ ...form, color: e.target.value })
@@ -246,14 +255,29 @@ export default function VehiclesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="v-device">Assign Device ID</Label>
-                  <Input
-                    id="v-device"
-                    value={form.assignedDeviceId}
-                    onChange={(e) =>
-                      setForm({ ...form, assignedDeviceId: e.target.value })
+                  <Label>Assign Device</Label>
+                  <Select
+                    value={form.assignedDeviceId || "none"}
+                    onValueChange={(v) =>
+                      setForm({
+                        ...form,
+                        assignedDeviceId: v === "none" ? "" : v,
+                      })
                     }
-                  />
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
+                      {devices.map((d) => (
+                        <SelectItem key={d.deviceId} value={d.deviceId}>
+                          {d.deviceId}
+                          {d.vehicleId ? " (assigned)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>
