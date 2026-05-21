@@ -1,62 +1,71 @@
 "use client"
 
-import { telemetryHistory, vehicles } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
 
-const colors = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)"]
-
-const config: Record<string, { label: string; color: string }> = {}
-const dataMap: Record<string, { time: string; fuel: number }[]> = {}
-
-const vehicleIds = vehicles.map((v) => v.vehicleId)
-
-for (const vId of vehicleIds) {
-  config[vId] = { label: vehicles.find((v) => v.vehicleId === vId)!.label, color: colors[vehicleIds.indexOf(vId)] }
-  dataMap[vId] = telemetryHistory
-    .filter((t) => t.vehicleId === vId)
-    .slice(-96)
-    .map((t) => ({
-      time: new Date(t.receivedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      fuel: t.fuelPercent,
-    }))
+export interface FuelLevelChartProps {
+  data: Array<{ time: string; fuel: number }>
+  vehicleLabel?: string
+  isLoading?: boolean
 }
 
-const maxLen = Math.max(...Object.values(dataMap).map((d) => d.length))
-const mergedData = Array.from({ length: maxLen }, (_, i) => {
-  const row: Record<string, string | number> = { time: dataMap[vehicleIds[0]][i]?.time ?? "" }
-  for (const vId of vehicleIds) {
-    row[vId] = dataMap[vId][i]?.fuel ?? 0
-  }
-  return row
-})
+const config = {
+  fuel: {
+    label: "Fuel Level",
+    color: "var(--color-chart-1)",
+  },
+}
 
-export function FuelLevelChart() {
+export function FuelLevelChart({ data, vehicleLabel = "Vehicle", isLoading = false }: FuelLevelChartProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Fuel Level Over Time (Last 8h)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+          Loading...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Fuel Level Over Time (Last 8h)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+          No data available for {vehicleLabel}
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Fuel Level Over Time (Last 8h)</CardTitle>
+        <CardTitle className="text-sm">Fuel Level Over Time (Last 8h) — {vehicleLabel}</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={config} className="aspect-[3/1] max-h-64 w-full">
-          <LineChart data={mergedData}>
+          <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="time" tick={{ fontSize: 11 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}%`} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Legend />
-            {vehicleIds.map((vId) => (
-              <Line
-                key={vId}
-                type="monotone"
-                dataKey={vId}
-                stroke={config[vId].color}
-                strokeWidth={2}
-                dot={false}
-                name={config[vId].label}
-              />
-            ))}
+            <Line
+              type="monotone"
+              dataKey="fuel"
+              stroke={config.fuel.color}
+              strokeWidth={2}
+              dot={false}
+              name={config.fuel.label}
+              isAnimationActive={false}
+            />
           </LineChart>
         </ChartContainer>
       </CardContent>

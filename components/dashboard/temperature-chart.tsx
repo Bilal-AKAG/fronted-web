@@ -4,25 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
 
-export interface SpeedChartProps {
-  data: Array<{ time: string; speed: number }>
+export interface TemperatureChartProps {
+  data: Array<{ time: string; temp: number }>
   vehicleLabel?: string
   isLoading?: boolean
 }
 
 const config = {
-  speed: {
-    label: "Speed",
-    color: "var(--color-chart-4)",
+  temp: {
+    label: "Temperature",
+    color: "var(--color-chart-3)",
   },
 }
 
-export function SpeedChart({ data, vehicleLabel = "Vehicle", isLoading = false }: SpeedChartProps) {
+export function TemperatureChart({ data, vehicleLabel = "Vehicle", isLoading = false }: TemperatureChartProps) {
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Speed Over Time (Last 8h)</CardTitle>
+          <CardTitle className="text-sm">Temperature Over Time (Last 8h)</CardTitle>
         </CardHeader>
         <CardContent className="flex h-64 items-center justify-center text-sm text-muted-foreground">
           Loading...
@@ -35,7 +35,7 @@ export function SpeedChart({ data, vehicleLabel = "Vehicle", isLoading = false }
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Speed Over Time (Last 8h)</CardTitle>
+          <CardTitle className="text-sm">Temperature Over Time (Last 8h)</CardTitle>
         </CardHeader>
         <CardContent className="flex h-64 items-center justify-center text-sm text-muted-foreground">
           No data available for {vehicleLabel}
@@ -47,23 +47,23 @@ export function SpeedChart({ data, vehicleLabel = "Vehicle", isLoading = false }
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Speed Over Time (Last 8h) — {vehicleLabel}</CardTitle>
+        <CardTitle className="text-sm">Temperature Over Time (Last 8h) — {vehicleLabel}</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={config} className="aspect-[3/1] max-h-64 w-full">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v} km/h`} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}°C`} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Legend />
             <Line
               type="monotone"
-              dataKey="speed"
-              stroke={config.speed.color}
+              dataKey="temp"
+              stroke={config.temp.color}
               strokeWidth={2}
               dot={false}
-              name={config.speed.label}
+              name={config.temp.label}
               isAnimationActive={false}
             />
           </LineChart>

@@ -1,26 +1,40 @@
 "use client"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { IconGasStation } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useLogin } from "@/hooks/use-auth"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const loginMutation = useLogin()
 
   const handleLogin = () => {
     if (!username || !password) {
-      setError("Username and password are required")
       return
     }
-    if (username === "admin" && password === "admin123") {
-      router.push("/dashboard")
-    } else {
-      setError("Invalid username or password")
+    loginMutation.mutate(
+      { username, password },
+      {
+        onError: () => {
+          setUsername("")
+          setPassword("")
+        },
+        onSuccess: (data) => {
+          if (!data.success) {
+            setUsername("")
+            setPassword("")
+          }
+        },
+      }
+    )
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleLogin()
     }
   }
 
@@ -42,6 +56,8 @@ export default function LoginPage() {
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loginMutation.isPending}
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -52,11 +68,21 @@ export default function LoginPage() {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loginMutation.isPending}
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="w-full" onClick={handleLogin}>
-            Sign In
+          {loginMutation.isError && (
+            <p className="text-sm text-destructive">
+              {loginMutation.error.message || "Invalid username or password"}
+            </p>
+          )}
+          <Button
+            className="w-full"
+            onClick={handleLogin}
+            disabled={loginMutation.isPending}
+          >
+            {loginMutation.isPending ? "Signing in..." : "Sign In"}
           </Button>
         </div>
       </div>
