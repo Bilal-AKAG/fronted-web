@@ -42,7 +42,13 @@ export default function VehicleDetailPage() {
   const updateMutation = useUpdateVehicle()
   const liveStates = useLiveState((s) => s.vehicleStates)
   const connectedIds = useLiveState((s) => s.connectedVehicleIds)
+  const deviceChanges = useLiveState((s) => s.deviceStatusChanges)
   const live = liveStates[vehicleId]
+
+  const deviceStatusMap: Record<string, string> = {}
+  for (const change of deviceChanges) {
+    if (change.newStatus) deviceStatusMap[change.deviceId] = change.newStatus
+  }
   const isConnected = connectedIds.includes(vehicleId)
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -283,7 +289,7 @@ export default function VehicleDetailPage() {
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Device Status</span>
-                      <p className="capitalize">{state.deviceStatus}</p>
+                      <p className="capitalize">{deviceStatusMap[vehicle.assignedDevice?.deviceId ?? ""] ?? vehicle.assignedDevice?.status ?? state.deviceStatus}</p>
                     </div>
                     <div className="col-span-2">
                       <span className="text-xs text-muted-foreground">Location</span>

@@ -28,6 +28,11 @@ export default function DashboardPage() {
   const connectedIds = useLiveState((s) => s.connectedVehicleIds)
 
   const vehicles = vehiclesData?.vehicles ?? []
+
+  const deviceStatusMap: Record<string, string> = {}
+  for (const change of deviceChanges) {
+    if (change.newStatus) deviceStatusMap[change.deviceId] = change.newStatus
+  }
   const alerts = alertsData?.alerts ?? []
   const devices = devicesData?.devices ?? []
 
@@ -165,7 +170,7 @@ export default function DashboardPage() {
                       tankCapacityLiters={v.currentState?.fuelLiters ? Math.round((fuelLiters / (fuelPct || 1)) * 100) : 80}
                       driverName={v.assignedDriver?.fullName ?? null}
                       engineOn={live?.engineOn ?? v.currentState?.engineOn ?? false}
-                      deviceStatus={live?.deviceStatus ?? v.currentState?.deviceStatus ?? "offline"}
+                      deviceStatus={deviceStatusMap[v.assignedDevice?.deviceId ?? ""] ?? v.assignedDevice?.status ?? live?.deviceStatus ?? "offline"}
                       alertsCount={null}
                       locationName={location}
                       latitude={latitude}

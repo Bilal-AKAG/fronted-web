@@ -27,6 +27,7 @@ export default function AnalyticsPage() {
   const { data: devicesData, isLoading: devicesLoading } = useDevices()
   const { trips, isLoading: tripsLoading } = useAllTrips({ limit: 100 })
   const liveStates = useLiveState((s) => s.vehicleStates)
+  const deviceChanges = useLiveState((s) => s.deviceStatusChanges)
 
   const vehicles = vehiclesData?.vehicles ?? []
   const alerts = alertsData?.alerts ?? []
@@ -54,6 +55,11 @@ export default function AnalyticsPage() {
     temp: r.tempCelsius,
   }))
 
+  const deviceStatusMap: Record<string, string> = {}
+  for (const change of deviceChanges) {
+    if (change.newStatus) deviceStatusMap[change.deviceId] = change.newStatus
+  }
+
   const vehicleStates = vehicles.map((v) => {
     const live = liveStates[v.vehicleId]
     return {
@@ -65,7 +71,7 @@ export default function AnalyticsPage() {
       engineOn: live?.engineOn ?? v.currentState?.engineOn ?? false,
       speedKmh: live?.speedKmh ?? v.currentState?.speedKmh ?? 0,
       tempCelsius: live?.tempCelsius ?? v.currentState?.tempCelsius ?? 0,
-      deviceStatus: live?.deviceStatus ?? v.currentState?.deviceStatus ?? "offline",
+      deviceStatus: deviceStatusMap[v.assignedDevice?.deviceId ?? ""] ?? v.assignedDevice?.status ?? live?.deviceStatus ?? "offline",
     }
   })
 
