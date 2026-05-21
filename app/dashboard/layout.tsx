@@ -2,6 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Header } from "@/components/dashboard/header"
 import { AuthGuard } from "@/components/auth-guard"
+import { WebSocketProvider } from "@/components/websocket-provider"
 
 export default function DashboardLayout({
   children,
@@ -10,6 +11,7 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
+      <WebSocketProvider />
       <SidebarProvider>
         <AppSidebar />
         <div className="flex flex-1 flex-col">
