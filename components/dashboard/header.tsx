@@ -20,10 +20,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { clearAuthCookie } from "@/lib/auth-cookie"
 
 export function Header() {
   const { resolvedTheme, setTheme } = useTheme()
   const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+
+  const initials = user?.username?.slice(0, 2).toUpperCase() ?? "AD"
+  const displayName = user?.username ?? "Admin User"
+
+  const handleLogout = () => {
+    clearAuthCookie()
+    logout()
+    router.push("/login")
+  }
 
   return (
     <header className="flex h-12 items-center gap-3 border-b px-4">
@@ -39,11 +52,11 @@ export function Header() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Avatar className="size-7 cursor-pointer">
-            <AvatarFallback className="text-xs">AD</AvatarFallback>
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuLabel className="text-xs">Admin User</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-xs">{displayName}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => router.push("/dashboard")}>
             <IconUser className="size-4" />
@@ -54,7 +67,7 @@ export function Header() {
             Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => router.push("/login")}>
+          <DropdownMenuItem onClick={handleLogout}>
             <IconLogout className="size-4" />
             Sign Out
           </DropdownMenuItem>
