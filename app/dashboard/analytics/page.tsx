@@ -1,20 +1,65 @@
 "use client"
 
-import { useVehicles } from "@/hooks/use-vehicles"
+import { useState } from "react"
+import { useVehicles, useVehicleHistory } from "@/hooks/use-vehicles"
+import { useAllTrips } from "@/hooks/use-trips"
+import { useAlerts } from "@/hooks/use-alerts"
+import { useDevices } from "@/hooks/use-devices"
 import { useLiveState } from "@/lib/store/live-state"
-import { IconChartBar, IconTruck, IconBell, IconDeviceDesktop } from "@tabler/icons-react"
+import { FuelLevelChart } from "@/components/dashboard/fuel-level-chart"
+import { SpeedChart } from "@/components/dashboard/speed-chart"
+import { TemperatureChart } from "@/components/dashboard/temperature-chart"
+import { FleetBarChart } from "@/components/dashboard/fleet-bar-chart"
+import { TripDistanceChart } from "@/components/dashboard/trip-distance-chart"
+import { AlertDistributionChart } from "@/components/dashboard/alert-distribution-chart"
+import { IconChartBar, IconTruck, IconBell, IconDeviceDesktop, IconTemperature } from "@tabler/icons-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function AnalyticsPage() {
-  const { data: vehiclesData, isLoading } = useVehicles()
+  const { data: vehiclesData, isLoading: vehiclesLoading } = useVehicles()
+  const { data: alertsData, isLoading: alertsLoading } = useAlerts()
+  const { data: devicesData, isLoading: devicesLoading } = useDevices()
+  const { trips, isLoading: tripsLoading } = useAllTrips({ limit: 100 })
   const liveStates = useLiveState((s) => s.vehicleStates)
 
   const vehicles = vehiclesData?.vehicles ?? []
+  const alerts = alertsData?.alerts ?? []
+  const devices = devicesData?.devices ?? []
+
+  const [selectedChartVehicleId, setSelectedChartVehicleId] = useState<string>("")
+  const chartVehicleId = selectedChartVehicleId || vehicles[0]?.vehicleId || ""
+  const selectedVehicle = vehicles.find((v) => v.vehicleId === chartVehicleId)
+
+  const { data: historyData, isLoading: historyLoading } = useVehicleHistory(chartVehicleId, { limit: 96 })
+  const historyRecords = historyData?.records ?? []
+
+  const fuelChartData = historyRecords.map((r) => ({
+    time: new Date(r.receivedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    fuel: r.fuelPercent,
+  }))
+
+  const speedChartData = historyRecords.map((r) => ({
+    time: new Date(r.receivedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    speed: r.speedKmh,
+  }))
+
+  const tempChartData = historyRecords.map((r) => ({
+    time: new Date(r.receivedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    temp: r.tempCelsius,
+  }))
 
   const vehicleStates = vehicles.map((v) => {
     const live = liveStates[v.vehicleId]
     return {
       id: v.vehicleId,
       label: v.label,
+      plateNumber: v.plateNumber,
       fuelPercent: live?.fuelPercent ?? v.currentState?.fuelPercent ?? 0,
       fuelLiters: live?.fuelLiters ?? v.currentState?.fuelLiters ?? 0,
       engineOn: live?.engineOn ?? v.currentState?.engineOn ?? false,
@@ -23,6 +68,20 @@ export default function AnalyticsPage() {
       deviceStatus: live?.deviceStatus ?? v.currentState?.deviceStatus ?? "offline",
     }
   })
+
+  const fleetFuelData = vehicleStates.map((v) => ({ label: v.label, value: v.fuelPercent }))
+  const fleetSpeedData = vehicleStates.map((v) => ({ label: v.label, value: v.speedKmh }))
+
+  const alertCounts = { critical: 0, warning: 0, info: 0 }
+  for (const alert of alerts) {
+    if (alert.status === "open") {
+      const sev = alert.severity as keyof typeof alertCounts
+      if (sev in alertCounts) alertCounts[sev]++
+    }
+  }
+  const alertSeverityData = Object.entries(alertCounts)
+    .filter(([, count]) => count > 0)
+    .map(([severity, count]) => ({ severity, count }))
 
   const totalFuel = vehicleStates.reduce((s, v) => s + v.fuelLiters, 0)
   const avgFuelPct =
@@ -35,6 +94,31 @@ export default function AnalyticsPage() {
       ? (vehicleStates.reduce((s, v) => s + v.tempCelsius, 0) / vehicleStates.length).toFixed(1)
       : "—"
 
+  const devicesOnline = devices.filter((d) => d.status === "online").length
+  const devicesStale = devices.filter((d) => d.status === "stale").length
+  const devicesOffline = devices.filter((d) => d.status === "offline").length
+
+  const tripDistanceByVehicle: Record<string, number> = {}
+  const fuelUsedByVehicle: Record<string, number> = {}
+  for (const trip of trips) {
+    const label =
+      vehicles.find((v) => v.vehicleId === trip.vehicleId)?.label ?? trip.vehicleId
+    tripDistanceByVehicle[label] = (tripDistanceByVehicle[label] ?? 0) + (trip.distanceKm ?? 0)
+    fuelUsedByVehicle[label] = (fuelUsedByVehicle[label] ?? 0) + (trip.fuelUsedLiters ?? 0)
+  }
+  const tripDistanceData = Object.entries(tripDistanceByVehicle)
+    .map(([vehicle, distanceKm]) => ({ vehicle, distanceKm: Math.round(distanceKm) }))
+    .sort((a, b) => b.distanceKm - a.distanceKm)
+
+  const fuelUsedData = Object.entries(fuelUsedByVehicle)
+    .map(([label, value]) => ({ label, value: Math.round(value) }))
+    .sort((a, b) => b.value - a.value)
+
+  const getFuelBarColor = (value: number) =>
+    value < 15 ? "var(--color-chart-5)" : value < 30 ? "var(--color-chart-4)" : "var(--color-chart-1)"
+
+  const loading = vehiclesLoading || alertsLoading || devicesLoading || tripsLoading
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -42,13 +126,13 @@ export default function AnalyticsPage() {
         <p className="text-sm text-muted-foreground">Fuel consumption insights and fleet performance metrics</p>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">Loading...</div>
       ) : vehicles.length === 0 ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">No data available.</div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard
               icon={<IconChartBar className="size-5" />}
               label="Fleet Avg Fuel"
@@ -59,16 +143,91 @@ export default function AnalyticsPage() {
               icon={<IconTruck className="size-5" />}
               label="Engines Running"
               value={`${runningVehicles}/${vehicles.length}`}
+              sub={runningVehicles > 0 ? `${Math.round((runningVehicles / vehicles.length) * 100)}% active` : "All parked"}
             />
             <StatCard
-              icon={<IconDeviceDesktop className="size-5" />}
+              icon={<IconTemperature className="size-5" />}
               label="Avg Temperature"
               value={`${avgTemp}°C`}
             />
             <StatCard
               icon={<IconBell className="size-5" />}
-              label="Fleet Size"
-              value={String(vehicles.length)}
+              label="Open Alerts"
+              value={String(alertCounts.critical + alertCounts.warning + alertCounts.info)}
+              sub={`${alertCounts.critical} critical`}
+            />
+            <StatCard
+              icon={<IconDeviceDesktop className="size-5" />}
+              label="Devices Online"
+              value={`${devicesOnline}/${devices.length}`}
+              sub={`${devicesStale} stale, ${devicesOffline} offline`}
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FleetBarChart
+              title="Fleet Fuel Levels"
+              data={fleetFuelData}
+              dataKey="value"
+              unit="%"
+              domain={[0, 100]}
+              cellColors
+              getBarColor={getFuelBarColor}
+            />
+            <FleetBarChart
+              title="Fleet Current Speed"
+              data={fleetSpeedData}
+              dataKey="value"
+              unit=" km/h"
+              color="var(--color-chart-4)"
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <AlertDistributionChart data={alertSeverityData} isLoading={alertsLoading} />
+            <div className="rounded-lg border p-4">
+              <h2 className="mb-4 font-heading text-sm font-semibold">Device Status Overview</h2>
+              <div className="grid grid-cols-3 gap-3">
+                <DeviceStat label="Online" count={devicesOnline} total={devices.length} color="text-emerald-500" bgColor="bg-emerald-100 dark:bg-emerald-950/40" />
+                <DeviceStat label="Stale" count={devicesStale} total={devices.length} color="text-amber-500" bgColor="bg-amber-100 dark:bg-amber-950/40" />
+                <DeviceStat label="Offline" count={devicesOffline} total={devices.length} color="text-red-500" bgColor="bg-red-100 dark:bg-red-950/40" />
+              </div>
+            </div>
+          </div>
+
+          {chartVehicleId && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-sm font-semibold">Vehicle Telemetry Trends</h2>
+                <Select value={chartVehicleId} onValueChange={setSelectedChartVehicleId}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select vehicle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map((v) => (
+                      <SelectItem key={v.vehicleId} value={v.vehicleId}>
+                        {v.label} ({v.plateNumber})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <FuelLevelChart data={fuelChartData} vehicleLabel={selectedVehicle?.label ?? chartVehicleId} isLoading={historyLoading} />
+                <SpeedChart data={speedChartData} vehicleLabel={selectedVehicle?.label ?? chartVehicleId} isLoading={historyLoading} />
+                <TemperatureChart data={tempChartData} vehicleLabel={selectedVehicle?.label ?? chartVehicleId} isLoading={historyLoading} />
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <TripDistanceChart data={tripDistanceData} isLoading={tripsLoading} />
+            <FleetBarChart
+              title="Fuel Used by Vehicle"
+              data={fuelUsedData}
+              dataKey="value"
+              unit=" L"
+              color="var(--color-chart-2)"
             />
           </div>
 
@@ -98,7 +257,7 @@ export default function AnalyticsPage() {
                           <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
                             <div
                               className={`h-full rounded-full ${
-                                v.fuelPercent < 15 ? "bg-destructive" : v.fuelPercent < 30 ? "bg-amber-500" : "bg-green-500"
+                                v.fuelPercent < 15 ? "bg-destructive" : v.fuelPercent < 30 ? "bg-amber-500" : "bg-[var(--color-chart-1)]"
                               }`}
                               style={{ width: `${v.fuelPercent}%` }}
                             />
@@ -155,6 +314,31 @@ function StatCard({
         <span className="text-xs text-muted-foreground">{label}</span>
         <span className="font-heading text-lg font-bold">{value}</span>
         {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
+      </div>
+    </div>
+  )
+}
+
+function DeviceStat({
+  label,
+  count,
+  total,
+  color,
+  bgColor,
+}: {
+  label: string
+  count: number
+  total: number
+  color: string
+  bgColor: string
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+  return (
+    <div className={`rounded-lg ${bgColor} p-3 text-center`}>
+      <div className={`text-2xl font-bold ${color}`}>{count}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
+        <div className={`h-full rounded-full ${color.replace("text-", "bg-")}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

@@ -5,8 +5,6 @@ import {
   IconMoon,
   IconSun,
   IconLogout,
-  IconUser,
-  IconSettings,
 } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -57,16 +55,7 @@ export function Header() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuLabel className="text-xs">{displayName}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-            <IconUser className="size-4" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <IconSettings className="size-4" />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator /> 
           <DropdownMenuItem onClick={handleLogout}>
             <IconLogout className="size-4" />
             Sign Out
