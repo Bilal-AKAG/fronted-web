@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useDevices, useCreateDevice } from "@/hooks/use-devices"
 import { useVehicles } from "@/hooks/use-vehicles"
+import { useLiveState } from "@/lib/store/live-state"
 import { IconDeviceDesktop, IconPlus } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,11 +35,17 @@ export default function DevicesPage() {
   const { data, isLoading } = useDevices()
   const { data: vehiclesData } = useVehicles()
   const createMutation = useCreateDevice()
+  const deviceChanges = useLiveState((s) => s.deviceStatusChanges)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ deviceId: "", vehicleId: "", firmwareVersion: "" })
 
   const devices = data?.devices ?? []
   const vehicles = vehiclesData?.vehicles ?? []
+
+  const latestDeviceStatus: Record<string, { status: string; lastSeenAt: string }> = {}
+  for (const change of deviceChanges) {
+    latestDeviceStatus[change.deviceId] = { status: change.newStatus, lastSeenAt: change.lastSeenAt }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -124,31 +131,44 @@ export default function DevicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {devices.map((d) => (
+                {devices.map((d) => {
+                  const live = latestDeviceStatus[d.deviceId]
+                  const status = live?.status ?? d.status
+                  const lastSeenAt = live?.lastSeenAt ?? d.lastSeenAt
+                  const isLive = !!live
+
+                  return (
                   <tr key={d.deviceId} className="border-b last:border-0">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <IconDeviceDesktop className="size-4 text-muted-foreground" />
                         <span className="font-medium">{d.deviceId}</span>
+                        {isLive && (
+                          <span className="relative flex size-2">
+                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
+                            <span className="relative inline-flex size-2 rounded-full bg-green-500" />
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{d.firmwareVersion ?? "—"}</td>
                     <td className="px-4 py-3">{d.vehicleId ?? "Unassigned"}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[d.status] ?? ""}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[status] ?? ""}`}
                       >
-                        {d.status}
+                        {status}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString() : "—"}
+                      {lastSeenAt ? new Date(lastSeenAt).toLocaleString() : "—"}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(d.registeredAt).toLocaleDateString()}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
